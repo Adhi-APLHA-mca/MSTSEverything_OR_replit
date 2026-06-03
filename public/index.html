@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Open Rails - Free Train Simulator</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: #1a1a2e;
+      color: #e0e0e0;
+      line-height: 1.6;
+    }
+
+    header {
+      background: linear-gradient(135deg, #0f3460 0%, #16213e 50%, #1a1a2e 100%);
+      border-bottom: 3px solid #4caf50;
+      padding: 2rem 1rem;
+      text-align: center;
+    }
+
+    .logo-area {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 1.5rem;
+      flex-wrap: wrap;
+    }
+
+    .logo-area img {
+      width: 80px;
+      height: 80px;
+    }
+
+    .logo-text h1 {
+      font-size: 2.8rem;
+      font-weight: 700;
+      color: #4caf50;
+      letter-spacing: 1px;
+    }
+
+    .logo-text p {
+      font-size: 1.1rem;
+      color: #a0c4a0;
+      margin-top: 0.25rem;
+    }
+
+    .badge-row {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+      justify-content: center;
+      margin-top: 1rem;
+    }
+
+    .badge {
+      background: rgba(76, 175, 80, 0.15);
+      border: 1px solid #4caf50;
+      color: #4caf50;
+      padding: 0.25rem 0.75rem;
+      border-radius: 999px;
+      font-size: 0.8rem;
+      font-weight: 600;
+    }
+
+    main {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 2rem 1rem 4rem;
+    }
+
+    .notice {
+      background: linear-gradient(135deg, #2d1b00, #3d2800);
+      border: 1px solid #f0a500;
+      border-left: 4px solid #f0a500;
+      border-radius: 8px;
+      padding: 1rem 1.5rem;
+      margin: 2rem 0;
+      color: #f5d080;
+    }
+
+    .notice strong { color: #f0a500; }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 1.5rem;
+      margin: 2rem 0;
+    }
+
+    .card {
+      background: #16213e;
+      border: 1px solid #2a3a5c;
+      border-radius: 12px;
+      padding: 1.5rem;
+      transition: border-color 0.2s, transform 0.2s;
+    }
+
+    .card:hover {
+      border-color: #4caf50;
+      transform: translateY(-2px);
+    }
+
+    .card-icon {
+      font-size: 2rem;
+      margin-bottom: 0.75rem;
+    }
+
+    .card h3 {
+      color: #4caf50;
+      font-size: 1.1rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .card p {
+      color: #b0b0c0;
+      font-size: 0.92rem;
+    }
+
+    h2 {
+      font-size: 1.6rem;
+      color: #4caf50;
+      margin: 2.5rem 0 1rem;
+      padding-bottom: 0.5rem;
+      border-bottom: 1px solid #2a3a5c;
+    }
+
+    .steps {
+      counter-reset: step;
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .steps li {
+      counter-increment: step;
+      display: flex;
+      align-items: flex-start;
+      gap: 1rem;
+      background: #16213e;
+      border: 1px solid #2a3a5c;
+      border-radius: 10px;
+      padding: 1rem 1.25rem;
+    }
+
+    .steps li::before {
+      content: counter(step);
+      background: #4caf50;
+      color: #fff;
+      font-weight: 700;
+      border-radius: 50%;
+      min-width: 2rem;
+      height: 2rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.9rem;
+    }
+
+    .steps li div { flex: 1; }
+    .steps li strong { color: #e0e0e0; display: block; margin-bottom: 0.25rem; }
+    .steps li span { color: #909090; font-size: 0.88rem; }
+
+    code {
+      background: #0a0a1a;
+      border: 1px solid #2a3a5c;
+      border-radius: 4px;
+      padding: 0.1rem 0.4rem;
+      font-family: 'Courier New', monospace;
+      font-size: 0.85rem;
+      color: #80d080;
+    }
+
+    .links {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      margin-top: 1.5rem;
+    }
+
+    .link-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: rgba(76, 175, 80, 0.1);
+      border: 1px solid #4caf50;
+      color: #4caf50;
+      text-decoration: none;
+      padding: 0.5rem 1.25rem;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      transition: background 0.2s, color 0.2s;
+    }
+
+    .link-btn:hover {
+      background: #4caf50;
+      color: #fff;
+    }
+
+    .link-btn.secondary {
+      border-color: #2a5a8c;
+      color: #6ab0e0;
+      background: rgba(42, 90, 140, 0.1);
+    }
+
+    .link-btn.secondary:hover {
+      background: #2a5a8c;
+      color: #fff;
+    }
+
+    .tech-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin-top: 0.75rem;
+    }
+
+    .tech-tag {
+      background: #0f1e35;
+      border: 1px solid #2a3a5c;
+      border-radius: 6px;
+      padding: 0.3rem 0.75rem;
+      font-size: 0.82rem;
+      color: #80a0c0;
+    }
+
+    .source-tree {
+      background: #0a0a1a;
+      border: 1px solid #2a3a5c;
+      border-radius: 10px;
+      padding: 1.25rem 1.5rem;
+      font-family: 'Courier New', monospace;
+      font-size: 0.85rem;
+      color: #80c080;
+      line-height: 1.8;
+      margin-top: 1rem;
+    }
+
+    .source-tree .dim { color: #505060; }
+    .source-tree .highlight { color: #80d0ff; }
+
+    footer {
+      text-align: center;
+      padding: 2rem;
+      border-top: 1px solid #2a3a5c;
+      color: #505070;
+      font-size: 0.85rem;
+      margin-top: 3rem;
+    }
+
+    footer a { color: #4caf50; text-decoration: none; }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="logo-area">
+    <img src="or_logo.png" alt="Open Rails Logo" onerror="this.style.display='none'">
+    <div class="logo-text">
+      <h1>Open Rails</h1>
+      <p>Free, open-source train simulator</p>
+    </div>
+  </div>
+  <div class="badge-row">
+    <span class="badge">C# / .NET</span>
+    <span class="badge">MonoGame</span>
+    <span class="badge">DirectX</span>
+    <span class="badge">GPL Licensed</span>
+    <span class="badge">MSTS Compatible</span>
+    <span class="badge">Windows</span>
+  </div>
+</header>
+
+<main>
+
+  <div class="notice">
+    <strong>Note:</strong> Open Rails is a Windows desktop application built with C#, MonoGame, and DirectX.
+    It requires <strong>Windows + Visual Studio</strong> to build and run — it cannot execute in a Linux/web environment.
+    This page serves as a project reference and setup guide.
+  </div>
+
+  <h2>About the Project</h2>
+  <p style="color:#b0b0c0; font-size:0.95rem; margin-bottom:1rem;">
+    Open Rails is a community-developed, free and open-source train simulator designed to be compatible with
+    Microsoft Train Simulator (MSTS) content. It supports the world's largest range of digital rail content
+    including routes, rolling stock, activities, and timetables — all under the GPL license.
+  </p>
+
+  <div class="grid">
+    <div class="card">
+      <div class="card-icon">🚂</div>
+      <h3>Simulation Engine</h3>
+      <p>Multi-threaded architecture with dedicated Render, Updater, Loader, and Sound threads for maximum performance.</p>
+    </div>
+    <div class="card">
+      <div class="card-icon">🔧</div>
+      <h3>MSTS Compatible</h3>
+      <p>Full backward compatibility with Microsoft Train Simulator routes, rolling stock, activities, and consists.</p>
+    </div>
+    <div class="card">
+      <div class="card-icon">🌍</div>
+      <h3>Open Source</h3>
+      <p>Licensed under GPL. Community-designed and supported, ensuring continuous evolution and improvement.</p>
+    </div>
+    <div class="card">
+      <div class="card-icon">📐</div>
+      <h3>Modern Physics</h3>
+      <p>Advanced physics including braking, steam/diesel/electric traction, superelevation, and more.</p>
+    </div>
+    <div class="card">
+      <div class="card-icon">🌐</div>
+      <h3>Multiplayer</h3>
+      <p>Multiplayer server support for shared rail operations across a network.</p>
+    </div>
+    <div class="card">
+      <div class="card-icon">🛠️</div>
+      <h3>Included Tools</h3>
+      <p>Track Viewer, Timetable Editor, Activity Editor, and Content Manager — all included in the solution.</p>
+    </div>
+  </div>
+
+  <h2>Tech Stack</h2>
+  <div class="tech-grid">
+    <span class="tech-tag">C# (.NET 4.7.2 / net6-windows)</span>
+    <span class="tech-tag">MonoGame (WindowsDX)</span>
+    <span class="tech-tag">DirectX via SharpDX</span>
+    <span class="tech-tag">OpenAL Soft (3D audio)</span>
+    <span class="tech-tag">Windows Forms / WPF</span>
+    <span class="tech-tag">MSBuild / NuGet</span>
+    <span class="tech-tag">Newtonsoft.Json</span>
+    <span class="tech-tag">Microsoft Roslyn (scripting)</span>
+    <span class="tech-tag">GNU.Gettext (i18n)</span>
+    <span class="tech-tag">XUnit (testing)</span>
+    <span class="tech-tag">Sphinx (documentation)</span>
+  </div>
+
+  <h2>Project Structure</h2>
+  <div class="source-tree">
+    <span class="highlight">Source/</span><br>
+    <span class="dim">├── </span>ORTS.sln &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="dim"># Visual Studio solution</span><br>
+    <span class="dim">├── </span><span class="highlight">RunActivity/</span> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="dim"># Main simulator executable</span><br>
+    <span class="dim">├── </span><span class="highlight">Launcher/</span> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="dim"># Entry point (OpenRails.exe)</span><br>
+    <span class="dim">├── </span><span class="highlight">Menu/</span> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="dim"># Route/activity selection GUI</span><br>
+    <span class="dim">├── </span>Orts.Simulation/ &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="dim"># Core physics & AI engine</span><br>
+    <span class="dim">├── </span>Orts.Formats.Msts/ &nbsp;&nbsp;&nbsp;<span class="dim"># MSTS file format parsers</span><br>
+    <span class="dim">├── </span>Orts.Common/ &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="dim"># Shared utilities</span><br>
+    <span class="dim">├── </span>MultiPlayerServer/ &nbsp;&nbsp;&nbsp;<span class="dim"># Multiplayer server</span><br>
+    <span class="dim">├── </span><span class="highlight">Contrib/</span> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="dim"># TrackViewer, TimetableEditor...</span><br>
+    <span class="dim">└── </span>Documentation/Manual/ <span class="dim"># reStructuredText manual source</span>
+  </div>
+
+  <h2>How to Build (Windows)</h2>
+  <ol class="steps">
+    <li>
+      <div>
+        <strong>Install Visual Studio 2019 or 2022</strong>
+        <span>Select the <em>.NET desktop development</em> workload during installation.</span>
+      </div>
+    </li>
+    <li>
+      <div>
+        <strong>Clone the Repository</strong>
+        <span>Use <code>git clone https://github.com/openrails/openrails.git</code> or clone from within Visual Studio.</span>
+      </div>
+    </li>
+    <li>
+      <div>
+        <strong>Open the Solution</strong>
+        <span>Open <code>Source/ORTS.sln</code> in Visual Studio. Accept any framework install prompts.</span>
+      </div>
+    </li>
+    <li>
+      <div>
+        <strong>Rebuild Solution</strong>
+        <span>Use <em>Build &gt; Rebuild Solution</em>. Compiled binaries are output to the <code>Program/</code> folder.</span>
+      </div>
+    </li>
+    <li>
+      <div>
+        <strong>Add Content &amp; Run</strong>
+        <span>Download content (e.g., Demo Model 1) from openrails.org. Run <code>OpenRails.exe</code> from the <code>Program/</code> folder.</span>
+      </div>
+    </li>
+  </ol>
+
+  <h2>Links &amp; Resources</h2>
+  <div class="links">
+    <a class="link-btn" href="https://www.openrails.org" target="_blank">🌐 Official Website</a>
+    <a class="link-btn" href="https://open-rails.readthedocs.io/en/latest/" target="_blank">📖 Online Manual</a>
+    <a class="link-btn" href="https://www.openrails.org/download/program/" target="_blank">⬇️ Download</a>
+    <a class="link-btn secondary" href="https://bugs.launchpad.net/or" target="_blank">🐛 Bug Tracker</a>
+    <a class="link-btn secondary" href="https://www.elvastower.com/forums/index.php?/forum/190-open-rails-simulator-project/" target="_blank">💬 Community Forum</a>
+    <a class="link-btn secondary" href="https://trello.com/b/DS2h3Pxc/open-rails-roadmap" target="_blank">🗺️ Roadmap</a>
+    <a class="link-btn secondary" href="https://github.com/openrails/openrails" target="_blank">💻 GitHub</a>
+  </div>
+
+</main>
+
+<footer>
+  Open Rails is free software released under the <a href="/LICENSE">GNU General Public License</a>.
+  &copy; Open Rails Community
+</footer>
+
+</body>
+</html>

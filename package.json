@@ -1,0 +1,9 @@
+{
+  "name": "openrails-project-page",
+  "version": "1.0.0",
+  "description": "Open Rails project landing page",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  }
+}
