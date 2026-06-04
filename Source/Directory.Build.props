@@ -4,5 +4,13 @@
     <AssemblyVersion Condition="'$(DesignTimeBuild)' != 'true' OR '$(BuildingProject)' == 'true'">0.0.$([System.DateTime]::UtcNow.Date.Subtract($([System.DateTime]::Parse("2000-01-01"))).TotalDays).$([System.Math]::Floor($([MSBuild]::Divide($([System.DateTime]::UtcNow.TimeOfDay.TotalSeconds), 2))))</AssemblyVersion>
     <OutputPath>$(MSBuildThisFileDirectory)\..\Program\</OutputPath>
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <!-- Fix for .NET 9 SDK: non-string .resx resources (images/icons) need this -->
+    <GenerateResourceUsePreserializedResources>true</GenerateResourceUsePreserializedResources>
   </PropertyGroup>
+  <!-- System.Resources.Extensions is needed at build time for net472 projects
+       when GenerateResourceUsePreserializedResources is true.
+       For net6-windows and above it is already included in the SDK. -->
+  <ItemGroup Condition="'$(TargetFramework)' == 'net472'">
+    <PackageReference Include="System.Resources.Extensions" Version="6.0.0" />
+  </ItemGroup>
 </Project>
