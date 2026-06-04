@@ -180,23 +180,22 @@ namespace Orts.Parsers.Msts
             if (!Directory.Exists(path))
                 throw new DirectoryNotFoundException(path);
 
-            // ── OR Route Protection: detect and decode protected files ────────
-            if (OrFileProtection.IsProtectedExtension(filename))
+            // ── OR Route Protection: streaming decode — only ~4 KB in RAM at once
+            if (OrFileProtection.IsProtectedExtension(filename) &&
+                OrFileProtection.HasMagicHeader(filename))
             {
-                byte[] raw = File.ReadAllBytes(filename);
-                if (OrFileProtection.HasMagic(raw))
-                {
-                    isProtectedFile = true;
-                    byte[] decoded = OrFileProtection.Decode(raw);
-                    // Decoded bytes live only in this MemoryStream — never written to disk
-                    streamSTF = new StreamReader(new MemoryStream(decoded), Encoding.UTF8,
-                                                 detectEncodingFromByteOrderMarks: true);
-                    FileName = filename;
-                    SimisSignature = streamSTF.ReadLine();
-                    LineNumber = 2;
-                    if (useTree) tree = new List<string>();
-                    return;
-                }
+                isProtectedFile = true;
+                // OpenDecodeStream opens the FileStream and wraps it with LfsrStream.
+                // StreamReader pulls data in ~4 KB chunks — never the whole file at once.
+                // The decoded content never exists as a complete buffer in RAM.
+                streamSTF = new StreamReader(OrFileProtection.OpenDecodeStream(filename),
+                                             Encoding.UTF8,
+                                             detectEncodingFromByteOrderMarks: true);
+                FileName = filename;
+                SimisSignature = streamSTF.ReadLine();
+                LineNumber = 2;
+                if (useTree) tree = new List<string>();
+                return;
             }
             // ── Standard (unprotected) path ───────────────────────────────────
             streamSTF = new StreamReader(filename, true); // was System.Text.Encoding.Unicode; but some ASCII files exist

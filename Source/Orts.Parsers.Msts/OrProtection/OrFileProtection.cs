@@ -1,33 +1,34 @@
 // OR Route Protection — File-level helpers used by STFReader
-// Detects magic header, decodes payload.
 
 using System;
 using System.IO;
-using System.Text;
 
 namespace Orts.Parsers.Msts.OrProtection
 {
     /// <summary>
-    /// Static helpers for detecting and decoding OR-protected route files.
+    /// Static helpers for detecting and streaming-decoding OR-protected route files.
     ///
     /// Protected file layout:
     ///   [0-7]  Magic bytes (8 bytes) — identifies this as a protected file
     ///   [8+]   LFSR-XOR payload — token-remapped STF text, XOR'd byte-by-byte
     ///
+    /// Decoding is STREAMING — only ~4 KB (StreamReader's buffer) is ever decoded
+    /// in RAM at any moment.  A full RAM dump never contains the entire plain text.
+    ///
     /// The LFSR seed is a compile-time constant stored only in this binary.
-    /// Obfuscate this binary with ConfuserEx before distribution to make
-    /// static extraction of the constant impractical.
+    /// Obfuscate this binary with ConfuserEx before distribution.
     /// </summary>
     internal static class OrFileProtection
     {
-        // ── Customise these two values before building your protected OR ───────
-        // Change SEED to any non-zero 32-bit value — keep it secret.
-        // Change MAGIC to any 8 bytes you choose — don't publish them.
-        private static readonly uint SEED = 0xB3C7A1F5u;
-        private static readonly byte[] MAGIC = { 0x4F, 0x52, 0x53, 0x45, 0x43, 0x01, 0x4B, 0x00 };
-        // ────────────────────────────────────────────────────────────────────────
+        // ── Change BOTH values before building your protected OR ─────────────
+        // SEED  : any non-zero 32-bit hex value  — keep it secret
+        // MAGIC : any 8 bytes of your choice     — keep them secret
+        // These same values MUST be copied into RoutePackager/Program.cs
+        internal static readonly uint   SEED  = 0xB3C7A1F5u;
+        internal static readonly byte[] MAGIC = { 0x4F, 0x52, 0x53, 0x45, 0x43, 0x01, 0x4B, 0x00 };
+        // ─────────────────────────────────────────────────────────────────────
 
-        /// <summary>File extensions that may be protected.</summary>
+        /// <summary>Returns true for file extensions that may be protected.</summary>
         internal static bool IsProtectedExtension(string filePath)
         {
             string ext = Path.GetExtension(filePath);
@@ -38,48 +39,36 @@ namespace Orts.Parsers.Msts.OrProtection
                 || ext.Equals(".rit", StringComparison.OrdinalIgnoreCase);
         }
 
-        /// <summary>Returns true when the first 8 bytes match the magic header.</summary>
-        internal static bool HasMagic(byte[] rawBytes)
+        /// <summary>
+        /// Reads only the first 8 bytes of the file to check for the magic header.
+        /// Does NOT read or decode the rest of the file.
+        /// </summary>
+        internal static bool HasMagicHeader(string filePath)
         {
-            if (rawBytes.Length < MAGIC.Length) return false;
+            byte[] header = new byte[MAGIC.Length];
+            using var fs = new FileStream(filePath, FileMode.Open, FileAccess.Read,
+                                          FileShare.Read, bufferSize: MAGIC.Length);
+            int read = fs.Read(header, 0, MAGIC.Length);
+            if (read < MAGIC.Length) return false;
             for (int i = 0; i < MAGIC.Length; i++)
-                if (rawBytes[i] != MAGIC[i]) return false;
+                if (header[i] != MAGIC[i]) return false;
             return true;
         }
 
         /// <summary>
-        /// Strips the 8-byte magic header and applies the LFSR reverse transform
-        /// to the payload, returning the decoded STF text bytes.
-        /// Never writes to disk — result lives only in a MemoryStream.
+        /// Opens the protected file and returns a streaming LfsrStream positioned
+        /// just after the magic header.  The caller wraps this in a StreamReader.
+        ///
+        /// At any moment, only the StreamReader's ~4 KB read buffer is decoded
+        /// in RAM — the entire file is never decrypted at once.
+        /// The stream (and the underlying FileStream) is owned by the caller.
         /// </summary>
-        internal static byte[] Decode(byte[] rawBytes)
+        internal static Stream OpenDecodeStream(string filePath)
         {
-            int payloadLen = rawBytes.Length - MAGIC.Length;
-            byte[] payload = new byte[payloadLen];
-            Array.Copy(rawBytes, MAGIC.Length, payload, 0, payloadLen);
-
-            // XOR is its own inverse — same LFSR pass decodes and encodes
-            var lfsr = new LfsrKeystream(SEED);
-            lfsr.Transform(payload, 0, payloadLen);
-
-            return payload;
-        }
-
-        /// <summary>
-        /// Encodes STF text bytes: applies LFSR transform then prepends magic header.
-        /// Used by the RoutePackager tool, not by OR itself.
-        /// </summary>
-        internal static byte[] Encode(byte[] plainBytes)
-        {
-            byte[] payload = (byte[])plainBytes.Clone();
-
-            var lfsr = new LfsrKeystream(SEED);
-            lfsr.Transform(payload, 0, payload.Length);
-
-            byte[] result = new byte[MAGIC.Length + payload.Length];
-            Array.Copy(MAGIC, 0, result, 0, MAGIC.Length);
-            Array.Copy(payload, 0, result, MAGIC.Length, payload.Length);
-            return result;
+            var fs = new FileStream(filePath, FileMode.Open, FileAccess.Read,
+                                    FileShare.Read, bufferSize: 4096);
+            fs.Seek(MAGIC.Length, SeekOrigin.Begin);   // skip past magic header
+            return new LfsrStream(fs, SEED);            // LFSR starts at byte 8
         }
     }
 }
