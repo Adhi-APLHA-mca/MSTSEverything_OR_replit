@@ -46,10 +46,12 @@ namespace Orts.Parsers.Msts.OrProtection
         internal static bool HasMagicHeader(string filePath)
         {
             byte[] header = new byte[MAGIC.Length];
-            using var fs = new FileStream(filePath, FileMode.Open, FileAccess.Read,
-                                          FileShare.Read, bufferSize: MAGIC.Length);
-            int read = fs.Read(header, 0, MAGIC.Length);
-            if (read < MAGIC.Length) return false;
+            using (var fs = new FileStream(filePath, FileMode.Open, FileAccess.Read,
+                                           FileShare.Read, bufferSize: MAGIC.Length))
+            {
+                int read = fs.Read(header, 0, MAGIC.Length);
+                if (read < MAGIC.Length) return false;
+            }
             for (int i = 0; i < MAGIC.Length; i++)
                 if (header[i] != MAGIC[i]) return false;
             return true;
